@@ -5,7 +5,7 @@ module Mongoid
     module Mappings
       extend ActiveSupport::Concern
 
-      module ClassMethods
+      class_methods do
         def fulltext_search_in(*args)
           options = args.last.is_a?(Hash) ? args.pop : {}
 
@@ -33,70 +33,41 @@ module Mongoid
         def remove_from_ngram_index
           mongoid_fulltext_config.each_pair do |index_name, _|
             ::I18n.available_locales.each do |locale|
-              coll = collection.database[localized_index_name(index_name, locale)]
-              coll.find(class: name).send(DELETE_FROM_INDEX_METHOD_NAME)
+              localized_index_collection = index_collection_for_name_and_locale(index_name, locale)
+              localized_index_collection.remove_ngrams(self)
             end
           end
+        end
+
+        def index_collection_for_name_and_locale(index_name, locale)
+          # collection_name = localized_index_name(index_name, locale)
+          # IndexCollection.new(collection.database[collection_name.to_sym])
+          IndexCollection.for(self, name: index_name, locale: locale)
         end
       end
 
       def update_ngram_index
         mongoid_fulltext_config.each_pair do |index_name, fulltext_config|
           ::I18n.available_locales.each do |locale|
-            loc_index_name = self.class.localized_index_name(index_name, locale)
-
             if condition = fulltext_config[:update_if]
               case condition
-              when Symbol then  next unless send condition
-              when String then  next unless instance_eval condition
-              when Proc then    next unless condition.call self
+              when Symbol then  next unless send(condition)
+              when String then  next unless instance_eval(condition)
+              when Proc   then  next unless condition.call(self)
               else; next
               end
             end
 
-            # remove existing ngrams from external index
-            coll = collection.database[loc_index_name.to_sym]
-            coll.find(document_id: _id).send(DELETE_FROM_INDEX_METHOD_NAME)
+            localized_index_collection = self.class.index_collection_for_name_and_locale(index_name, locale)
+            localized_index_collection.remove_ngrams(self)
 
-            # extract ngrams from fields
-            field_values = fulltext_config[:ngram_fields].map do |field_name|
-              next send(field_name) if field_name == :to_s
-              next unless field = self.class.fields[field_name.to_s]
-              field.localized? ? send("#{field_name}_translations")[locale] : send(field_name)
-            end
-
-            ngrams = field_values.inject({}) do |accum, item|
-              accum.update(Services::CalculateNgrams.call(item, fulltext_config, false))
-            end
+            ngrams = extract_ngrams_from_fields(fulltext_config, locale)
 
             return if ngrams.empty?
 
-            # apply filters, if necessary
-            filter_values = nil
-            if fulltext_config.key?(:filters)
-              filter_values = Hash[
-                fulltext_config[:filters].map do |key, value|
-                  begin
-                    [key, value.call(self)]
-                  rescue StandardError # Suppress any exceptions caused by filters
-                  end
-                end.compact
-              ]
-            end
+            filter_values = apply_filters(fulltext_config)
 
-            # insert new ngrams in external index
-            ngrams.each_pair do |ngram, score|
-              index_document = {
-                class: self.class.name,
-                document_id: _id,
-                ngram: ngram,
-                score: score
-              }
-
-              index_document[:filter_values] = filter_values if fulltext_config.key?(:filters)
-
-              coll.send INSERT_METHOD_NAME, index_document
-            end
+            localized_index_collection.insert_ngrams(self, ngrams, filter_values)
           end
         end
       end
@@ -104,10 +75,42 @@ module Mongoid
       def remove_from_ngram_index
         mongoid_fulltext_config.each_pair do |index_name, _|
           ::I18n.available_locales.each do |locale|
-            coll = collection.database[self.class.localized_index_name(index_name, locale)]
-            coll.find(document_id: _id).send(DELETE_FROM_INDEX_METHOD_NAME)
+            localized_index_collection = self.class.index_collection_for_name_and_locale(index_name, locale)
+            localized_index_collection.remove_ngrams(self)
           end
         end
+      end
+
+      private
+
+      def apply_filters(fulltext_config)
+        return unless fulltext_config.key?(:filters)
+        Hash[
+          fulltext_config[:filters].map do |key, value|
+            begin
+              [key, value.call(self)]
+            rescue StandardError # Suppress any exceptions caused by filters
+            end
+          end.compact
+        ]
+      end
+
+      def extract_ngrams_from_fields(fulltext_config, locale)
+        ngram_fields = fulltext_config[:ngram_fields]
+
+        field_values = ngram_fields.map do |field_name|
+          next send(field_name) if field_name == :to_s
+          next unless field = self.class.fields[field_name.to_s]
+          if field.localized?
+            send("#{field_name}_translations")[locale]
+          else
+            send(field_name)
+          end
+        end
+
+        field_values.map do |field_value|
+          Services::CalculateNgrams.call(field_value, fulltext_config, false)
+        end.flatten
       end
     end
   end
