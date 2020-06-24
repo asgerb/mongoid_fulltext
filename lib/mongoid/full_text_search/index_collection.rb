@@ -31,12 +31,12 @@ module Mongoid
 
       # For each ngram, construct the query we'll use to pull index documents and
       # get a count of the number of index documents containing that n-gram
-      def ngram_cursors(ngrams, filters)
-        ngrams.map do |ngram|
-          query = { "ngram" => ngram.name }
+      def ngram_cursors(ngram_scores, filters)
+        ngram_scores.map do |ngram_score|
+          query = { "ngram" => ngram_score.ngram }
           query.update(filters)
           count = find(query).count
-          NgramCursor.new(ngram: ngram, count: count, query: query)
+          NgramCursor.new(ngram_score: ngram_score, count: count, query: query)
         end
       end
 
@@ -76,18 +76,18 @@ module Mongoid
         indexes.send(CREATE_INDEX_METHOD_NAME, index, options)
       end
 
-      def insert_ngrams(document, ngrams, filter_values)
-        ngrams.each do |ngram|
-          insert_ngram(document, ngram, filter_values)
+      def insert_ngrams(document, ngram_scores, filter_values)
+        ngram_scores.each do |ngram_score|
+          insert_ngram(document, ngram_score, filter_values)
         end
       end
 
-      def insert_ngram(document, ngram, filter_values)
+      def insert_ngram(document, ngram_score, filter_values)
         index_document = {
           class: document.class.name,
           document_id: document._id,
-          ngram: ngram.name,
-          score: ngram.score
+          ngram: ngram_score.ngram,
+          score: ngram_score.score
         }
 
         if filter_values.present?

@@ -2,12 +2,12 @@
 module Mongoid
   module FullTextSearch
     class NgramCursor
-      attr_reader :ngram, :count, :query
+      attr_reader :ngram_score, :count, :query
 
-      delegate :score, to: :ngram
+      delegate :score, to: :ngram_score
 
-      def initialize(ngram:, count:, query:)
-        @ngram = ngram
+      def initialize(ngram_score:, count:, query:)
+        @ngram_score = ngram_score
         @count = count
         @query = query
       end
