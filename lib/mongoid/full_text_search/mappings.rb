@@ -41,8 +41,6 @@ module Mongoid
         end
 
         def index_collection_for_name_and_locale(index_name, locale)
-          # collection_name = localized_index_name(index_name, locale)
-          # IndexCollection.new(collection.database[collection_name.to_sym])
           IndexCollection.for(self, name: index_name, locale: locale)
         end
       end
@@ -59,8 +57,8 @@ module Mongoid
               end
             end
 
-            localized_index_collection = self.class.index_collection_for_name_and_locale(index_name, locale)
-            localized_index_collection.remove_ngrams(self)
+            index_collection = IndexCollection.for(self, name: index_name, locale: locale)
+            index_collection.remove_ngrams(self)
 
             ngrams = extract_ngrams_from_fields(fulltext_config, locale)
 
@@ -68,7 +66,7 @@ module Mongoid
 
             filter_values = apply_filters(fulltext_config)
 
-            localized_index_collection.insert_ngrams(self, ngrams, filter_values)
+            index_collection.insert_ngrams(self, ngrams, filter_values)
           end
         end
       end
@@ -84,10 +82,10 @@ module Mongoid
 
       private
 
-      def apply_filters(fulltext_config)
-        return unless fulltext_config.key?(:filters)
+      def apply_filters(config)
+        return unless config.key?(:filters)
         Hash[
-          fulltext_config[:filters].map do |key, value|
+          config[:filters].map do |key, value|
             begin
               [key, value.call(self)]
             rescue StandardError # Suppress any exceptions caused by filters
@@ -96,8 +94,8 @@ module Mongoid
         ]
       end
 
-      def extract_ngrams_from_fields(fulltext_config, locale)
-        ngram_fields = fulltext_config[:ngram_fields]
+      def extract_ngrams_from_fields(config, locale)
+        ngram_fields = config[:ngram_fields]
 
         field_values = ngram_fields.map do |field_name|
           next send(field_name) if field_name == :to_s
@@ -110,7 +108,7 @@ module Mongoid
         end
 
         field_values.map do |field_value|
-          Services::CalculateNgrams.call(field_value, fulltext_config, false)
+          Services::CalculateNgrams.call(field_value, config, false)
         end.flatten
       end
     end
