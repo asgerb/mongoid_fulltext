@@ -24,11 +24,11 @@ module Mongoid
           index_name = options.fetch(:index, mongoid_fulltext_config.keys.first)
           config = mongoid_fulltext_config[index_name]
           index_collection = IndexCollection.for(self, name: index_name, locale: ::I18n.locale)
-          filters = query_filters(filter_options).merge(document_type_filters)
+          filter_options = options.except(:max_results, :return_scores, :index)
           results = Search
             .on(collection: index_collection, config: config)
             .for(query_string)
-            .results(max: max_results, filters: filters)
+            .results(max: max_results, filters: filters(filter_options))
 
           instantiate_mapreduce_results(results: results, include_scores: return_scores)
         end
@@ -47,6 +47,10 @@ module Mongoid
           end
         end
 
+        def filters(options)
+          query_filters(options).merge(document_type_filters)
+        end
+
         def query_filters(options)
           Hash[
             options.map do |key, value|
@@ -60,6 +64,10 @@ module Mongoid
               end
             end
           ]
+        end
+
+        def format_filter(operator, key, value)
+          [format("filter_values.%s", key), { operator => [value].flatten }]
         end
 
         # add filter by type according to SCI classes
