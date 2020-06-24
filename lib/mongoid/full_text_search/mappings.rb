@@ -1,4 +1,5 @@
-require 'mongoid/full_text_search/services/calculate_ngrams'
+# frozen_string_literal: true
+require "mongoid/full_text_search/services/calculate_ngrams"
 
 module Mongoid
   module FullTextSearch

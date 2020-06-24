@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require "mongoid/full_text_search/ngram_cursor"
 require "mongoid/full_text_search/candidate"
 

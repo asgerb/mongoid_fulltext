@@ -1,5 +1,6 @@
+# frozen_string_literal: true
 require "unicode_utils"
-require "mongoid/full_text_search/ngram"
+require "mongoid/full_text_search/ngram_score"
 
 module Mongoid
   module FullTextSearch
@@ -30,22 +31,22 @@ module Mongoid
           # below and multiplying scores of matching ngrams together yields a score function that has the
           # property that score(x,y) > score(x,z) for any string z containing y and score(x,y) > score(x,z)
           # for any string z contained in y.
-          ngrams = build_ngram_array
+          ngram_scores = build_ngram_array
 
           # If an ngram appears multiple times in the query string, keep the max score
-          ngrams = ngrams.group_by(&:name).map do |name, ngrams|
-            Ngram.new(name: name, score: ngrams.map(&:score).max)
+          ngram_scores = ngram_scores.group_by(&:ngram).map do |ngram, ngram_scores|
+            NgramScore.new(ngram: ngram, score: ngram_scores.map(&:score).max)
           end
 
           # Add 'short prefix' records to the array: prefixes of the string that are length (ngram_width - 1)
-          ngrams += short_prefixes if index_short_prefixes?
+          ngram_scores += short_prefixes if index_short_prefixes?
 
           # Add records to the array of ngrams for each full word in the string that isn't a stop word
-          ngrams += full_words if index_full_words?
+          ngram_scores += full_words if index_full_words?
 
           # If an ngram appears as any combination of full word, short prefix, and ngram, keep the sum of the two scores
-          ngrams.group_by(&:name).map do |name, ngrams|
-            Ngram.new(name: name, score: ngrams.map(&:score).sum)
+          ngram_scores.group_by(&:ngram).map do |ngram, ngram_scores|
+            NgramScore.new(ngram: ngram, score: ngram_scores.map(&:score).sum)
           end
         end
 
@@ -59,7 +60,7 @@ module Mongoid
                       Math.sqrt(2.0 / filtered_str.length)
                     end
 
-            Ngram.new(name: filtered_str[i..i + ngram_width - 1], score: score)
+            NgramScore.new(ngram: filtered_str[i..i + ngram_width - 1], score: score)
           end
         end
 
@@ -69,7 +70,7 @@ module Mongoid
             next res if word.length < ngram_width - 1
             prefix = word[0...ngram_width - 1]
             if prefixes_seen[prefix].nil? && (stop_word?(word) || filtered_str?(word))
-              res << Ngram.new(name: prefix, score: 1 + 1.0 / filtered_str.length )
+              res << NgramScore.new(ngram: prefix, score: 1 + 1.0 / filtered_str.length )
               prefixes_seen[prefix] = true
             end
           end
@@ -79,7 +80,7 @@ module Mongoid
           full_words_seen = {}
           all_words.each_with_object([]) do |word, res|
             if word.length > 1 && full_words_seen[word].nil? && (stop_word?(word) || filtered_str?(word))
-              res << Ngram.new(name: word, score: 1 + 1.0 / filtered_str.length )
+              res << NgramScore.new(ngram: word, score: 1 + 1.0 / filtered_str.length )
               full_words_seen[word] = true
             end
           end

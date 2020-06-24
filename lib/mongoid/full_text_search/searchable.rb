@@ -1,6 +1,6 @@
+# frozen_string_literal: true
 require "mongoid/full_text_search/services/calculate_ngrams"
 require "mongoid/full_text_search/index_collection"
-require "mongoid/full_text_search/result"
 require "mongoid/full_text_search/search"
 
 module Mongoid

@@ -1,4 +1,5 @@
-require 'mongoid/full_text_search/services/index_definition'
+# frozen_string_literal: true
+require "mongoid/full_text_search/services/index_definition"
 
 module Mongoid
   module FullTextSearch

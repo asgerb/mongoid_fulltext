@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+require "mongoid/full_text_search/result"
+
 module Mongoid
   module FullTextSearch
     class Search
