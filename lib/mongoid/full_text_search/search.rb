@@ -25,6 +25,8 @@ module Mongoid
         # get a count of the number of index documents containing that n-gram
         cursors = collection.ngram_cursors(ngrams, filters)
 
+        return [] if cursors.blank?
+
         # Using the queries we just constructed and the n-gram frequency counts we
         # just computed, pull in about *:max_candidate_set_size* candidates by
         # considering the n-grams in order of increasing frequency. When we've

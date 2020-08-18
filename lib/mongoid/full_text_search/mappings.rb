@@ -109,7 +109,7 @@ module Mongoid
 
         field_values.map do |field_value|
           Services::CalculateNgrams.call(field_value, config, false)
-        end.flatten
+        end.flatten.reject(&:blank?)
       end
     end
   end

@@ -25,6 +25,7 @@ describe Mongoid::FullTextSearch do
     let!(:lowered)     { BasicArtwork.create(title: 'Lowered') }
     let!(:cookies)     { BasicArtwork.create(title: 'Cookies') }
     let!(:empty)       { BasicArtwork.create(title: '') }
+    let!(:nil)         { BasicArtwork.create }
     let!(:cesar)       { BasicArtwork.create(title: "C\u00e9sar Galicia") }
     let!(:julio)       { BasicArtwork.create(title: 'Julio Cesar Morales') }
     let!(:csar)        { BasicArtwork.create(title: 'Csar') }

@@ -23,7 +23,7 @@ module Mongoid
         end
 
         def call
-          return {} unless str
+          return unless str
 
           # Create an array of records of the form {:ngram => x, :score => y} for all ngrams that occur in the
           # input string using the step size that we just computed. Let score(x,y) be the score of string x

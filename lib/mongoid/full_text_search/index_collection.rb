@@ -32,6 +32,7 @@ module Mongoid
       # For each ngram, construct the query we'll use to pull index documents and
       # get a count of the number of index documents containing that n-gram
       def ngram_cursors(ngram_scores, filters)
+        return [] if ngram_scores.blank?
         ngram_scores.map do |ngram_score|
           query = { "ngram" => ngram_score.ngram }
           query.update(filters)
