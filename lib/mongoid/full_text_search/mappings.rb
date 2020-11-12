@@ -99,8 +99,7 @@ module Mongoid
 
         field_values = ngram_fields.map do |field_name|
           next send(field_name) if field_name == :to_s
-          next unless field = self.class.fields[field_name.to_s]
-          if field.localized?
+          if respond_to?("#{field_name}_translations")
             send("#{field_name}_translations")[locale]
           else
             send(field_name)

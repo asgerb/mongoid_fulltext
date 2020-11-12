@@ -88,6 +88,17 @@ describe Mongoid::FullTextSearch do
     end
   end
 
+  context 'with no field' do
+    let!(:pablo_picasso) { NoFieldArtist.create(first_name: 'Pablo', last_name: 'Picasso') }
+    let!(:andy_warhol)   { NoFieldArtist.create(first_name: 'Andy', last_name: 'Warhol') }
+
+    it 'returns exact matches' do
+      expect(NoFieldArtist.fulltext_search('Pablo Picasso', max_results: 1).first).to eq(pablo_picasso)
+      expect(NoFieldArtist.fulltext_search('Andy Warhol', max_results: 1).first).to eq(andy_warhol)
+      expect(NoFieldArtist.fulltext_search('Warhol', max_results: 1).first).to eq(andy_warhol)
+    end
+  end
+
   context 'with default settings' do
     let!(:flower_myth) { Gallery::BasicArtwork.create(title: 'Flower Myth') }
     let!(:flowers)     { Gallery::BasicArtwork.create(title: 'Flowers') }
