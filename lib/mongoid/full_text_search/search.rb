@@ -59,7 +59,7 @@ module Mongoid
       attr_accessor :query
 
       def ngrams
-        Services::CalculateNgrams.call(query, config)
+        NgramScoreCalculation.call(query, config)
       end
     end
   end

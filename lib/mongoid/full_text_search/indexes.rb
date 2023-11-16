@@ -1,5 +1,4 @@
 # frozen_string_literal: true
-require "mongoid/full_text_search/services/index_definition"
 
 module Mongoid
   module FullTextSearch
@@ -27,7 +26,7 @@ module Mongoid
         def fulltext_search_ensure_indexes(index_name, locale, config)
           index_collection = IndexCollection.for(self, name: index_name, locale: locale)
           filters = config.fetch(:filters, [])
-          index_definition = Services::IndexDefinition.call(index_collection, filters)
+          index_definition = IndexDefinition.call(index_collection, filters)
 
           if Mongoid.logger
             Mongoid.logger.info("Ensuring fts_index on #{index_collection.name}: #{index_definition}")

@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require "mongoid/full_text_search/services/calculate_ngrams"
+require "mongoid/full_text_search/ngram_score_calculation"
 
 module Mongoid
   module FullTextSearch
@@ -107,7 +107,7 @@ module Mongoid
         end
 
         field_values.map do |field_value|
-          Services::CalculateNgrams.call(field_value, config, false)
+          NgramScoreCalculation.call(field_value, config, false)
         end.flatten.reject(&:blank?)
       end
     end
