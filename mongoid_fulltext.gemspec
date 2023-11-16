@@ -17,4 +17,5 @@ Gem::Specification.new do |s|
   s.add_dependency 'mongoid-compatibility', '>= 0.5.1'
   s.add_dependency 'unicode_utils'
   s.add_development_dependency 'database_cleaner'
+  s.add_development_dependency 'database_cleaner-mongoid'
 end
