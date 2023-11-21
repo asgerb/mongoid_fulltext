@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require_relative "callable"
+require_relative "ngram_score"
 
 module Mongoid
   module FullTextSearch
