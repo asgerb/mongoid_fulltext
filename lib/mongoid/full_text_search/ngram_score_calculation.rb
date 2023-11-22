@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require "unicode_utils"
 require_relative "callable"
 require_relative "ngram_score"
 
