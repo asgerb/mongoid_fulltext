@@ -73,6 +73,11 @@ module Mongoid
           .sort[0...max]
       end
 
+      def ensure_collection
+        return if collection.database.collection_names.include?(collection.name)
+        collection.create
+      end
+
       def create_index(index, options={})
         indexes.send(CREATE_INDEX_METHOD_NAME, index, options)
       end

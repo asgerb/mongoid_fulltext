@@ -18,13 +18,9 @@ module Mongoid
           end
         end
 
-        def localized_index_name(name, locale)
-          return name unless localize_fulltext_index?
-          "#{name}_#{locale}"
-        end
-
         def fulltext_search_ensure_indexes(index_name, locale, config)
           index_collection = IndexCollection.for(self, name: index_name, locale: locale)
+          index_collection.ensure_collection
           filters = config.fetch(:filters, [])
           index_definition = IndexDefinition.call(index_collection, filters)
 
