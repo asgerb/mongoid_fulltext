@@ -138,9 +138,8 @@ module Mongoid
       # Remove any characters that aren't in the alphabet and aren't word separators
       def filtered_str
         str
-          .mb_chars
           .downcase
-          .to_s.split("")
+          .split("")
           .find_all { |ch| alphabet[ch] || word_separators[ch] }
           .join("")
       end
